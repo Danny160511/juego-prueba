@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <title>🚀 El Juego Más Difícil del Mundo - Control por Gestos Espacial</title>
+    <meta name="description"
+        content="Juego espacial con control por gestos usando MediaPipe. Navega por el espacio con tu dedo índice.">
+    <meta name="keywords" content="juego, gestos, MediaPipe, espacio, control por cámara">
+
+
+    <link rel="preload" href="styles.css" as="style">
+    <link rel="preload" href="gesture-game.js" as="script">
+    <link rel="preload" href="img/TonyOriginal.png" as="image">
+
+
+    <link rel="stylesheet" href="styles.css">
+
+
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+</head>
+
+<body>
+    <!-- Pantalla de permisos de cámara -->
+    <div id="cameraPermission">
+        <h2>🚀 Control por Gestos Espacial</h2>
+        <p>Navega por el espacio usando gestos con tu cámara</p>
+        <p><strong>🎮 Controles de Gestos:</strong></p>
+        <ul>
+            <li>👆 Apunta con el dedo índice = El personaje te sigue como cursor</li>
+            <li>✋ Mano abierta = Pausa/Reanuda el juego</li>
+            <li>🎯 Mueve el dedo = El personaje se mueve hacia donde apuntas</li>
+        </ul>
+        <p><strong>🎹 Controles de Teclado (Alternativos):</strong></p>
+        <ul>
+            <li>WASD o Flechas = Movimiento tradicional</li>
+            <li>Espacio = Reiniciar cuando mueres</li>
+        </ul>
+        <button class="permission-button" onclick="startCamera()">🚀 Activar Cámara y Jugar</button>
+        <button class="permission-button" onclick="playWithoutCamera()">🎮 Jugar Solo con Teclado</button>
+    </div>
+
+    <!-- Contenedor principal del juego -->
+    <div id="gameContainer">
+        <div id="title">🚀 AVENTURA ESPACIAL - CONTROL POR GESTOS 🚀</div>
+
+        <!-- Layout horizontal: juego a la izquierda, instrucciones a la derecha -->
+        <div id="gameLayout">
+            <!-- Área del juego -->
+            <div id="gameArea">
+                <canvas id="gameCanvas" width="800" height="600" aria-label="Canvas del juego espacial"></canvas>
+                <div id="ui">
+                    <div class="stat">🌟 Nivel: <span id="level">1</span></div>
+                    <div class="stat">💀 Muertes: <span id="deaths">0</span></div>
+                    <div class="stat">⏱️ Tiempo: <span id="time">0</span>s</div>
+                </div>
+            </div>
+
+            <!-- Panel lateral de instrucciones -->
+            <div id="instructionsPanel">
+                <div id="instructions">
+                    <strong>🎯 Misión Espacial:</strong><br>
+                    🔵 Recolecta todos los cristales azules<br>
+                    🟡 Llega a la estación espacial amarilla<br>
+                    🔴 Evita los asteroides rojos<br>
+                    <br>
+                    <strong>🎮 Controles:</strong><br>
+                    👆 Apunta con el dedo = Cursor espacial<br>
+                    ✋ Mano abierta = Pausa/Reinicia<br>
+                    ⌨️ WASD/Flechas = Control alternativo
+                </div>
+
+                <!-- Botones de control -->
+                <div id="gameControls">
+                    <!-- Botón de pausa -->
+                    <button id="pauseButton" class="control-button" onclick="togglePause()">
+                        <span id="pauseIcon">⏸️</span> <span id="pauseText">PAUSAR</span>
+                    </button>
+
+                    <!-- Botón de gestos (solo visible cuando está pausado) -->
+                    <button id="gestureToggle" class="control-button gesture-button" onclick="toggleGestures()"
+                        style="display: none;">
+                        <span id="gestureIcon">📷</span> <span id="gestureText">ACTIVAR GESTOS</span>
+                    </button>
+
+                    <!-- Botón para abrir menú de niveles -->
+                    <button class="menu-toggle" onclick="openLevelMenu()">🌌 SELECCIONAR MISIÓN</button>
+
+                    <!-- Botón para abrir menú de ajustes -->
+                    <button class="menu-toggle" onclick="openSettingsMenu()">⚙️ AJUSTES</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controles virtuales para móviles -->
+        <div id="mobileControls" class="mobile-controls">
+            <div class="virtual-joystick" id="virtualJoystick">
+                <div class="joystick-base">
+                    <div class="joystick-knob" id="joystickKnob"></div>
+                </div>
+                <div class="joystick-label">MOVER</div>
+            </div>
+
+            <div class="mobile-buttons">
+                <button class="mobile-btn pause-btn" onclick="togglePause()">⏸️</button>
+                <button class="mobile-btn restart-btn" onclick="mobileRestart()" style="display: none;">🔄</button>
+            </div>
+        </div>
+
+        <!-- Indicador de controles móviles -->
+        <div id="mobileInstructions" class="mobile-instructions">
+            <div class="mobile-tip">
+                📱 <strong>Controles Móviles:</strong><br>
+                🕹️ Joystick virtual = Mover<br>
+                👆 Toca la pantalla = Seguir dedo<br>
+                👆👆 Doble toque = Pausa<br>
+                ⏸️ Botón pausa = Pausar/Reanudar
+            </div>
+        </div>
+
+        <div id="gameOver">
+            <h2>💥 ¡GAME OVER! 💥</h2>
+            <p>🖐️ Haz gesto de mano abierta para reintentar</p>
+            <p>⌨️ O presiona ESPACIO en teclado</p>
+        </div>
+    </div>
+
+    <!-- Cámara para gestos -->
+    <div id="cameraContainer" style="display: none;">
+        <video id="videoElement" autoplay muted playsinline></video>
+    </div>
+
+    <!-- Estado de gestos -->
+    <div id="gestureStatus" style="display: none;">
+        <div class="gesture-indicator">
+            <div class="gesture-icon inactive" id="upGesture">↑</div>
+            <span>Cursor Activo</span>
+        </div>
+        <div class="gesture-indicator">
+            <div class="gesture-icon inactive" id="downGesture">🎯</div>
+            <span>Siguiendo Dedo</span>
+        </div>
+        <div class="gesture-indicator">
+            <div class="gesture-icon inactive" id="leftGesture">👆</div>
+            <span>Apuntando</span>
+        </div>
+        <div class="gesture-indicator">
+            <div class="gesture-icon inactive" id="rightGesture">🚀</div>
+            <span>Navegando</span>
+        </div>
+        <div class="gesture-indicator">
+            <div class="gesture-icon inactive" id="pauseGesture">✋</div>
+            <span>Pausa</span>
+        </div>
+    </div>
+
+    <!-- Panel Lateral de Misiones -->
+    <div id="levelMenu" style="display: none;">
+        <div class="level-menu-container">
+            <button class="close-panel" onclick="closeLevelMenu()" title="Cerrar Panel">×</button>
+            <h2>🌌 MISIONES ESPACIALES</h2>
+            <div class="level-grid" id="levelGrid">
+                <!-- Los niveles se generan dinámicamente -->
+            </div>
+            <div class="menu-buttons">
+                <button class="menu-button" onclick="resetProgress()">🔄 Reiniciar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Ajustes -->
+    <div id="settingsMenu" style="display: none;">
+        <div class="settings-menu-container">
+            <button class="close-panel" onclick="closeSettingsMenu()" title="Cerrar Panel">×</button>
+            <h2>⚙️ AJUSTES DEL JUEGO</h2>
+
+            <div class="settings-content">
+                <!-- Ajustes de Audio -->
+                <div class="settings-section">
+                    <h3>🔊 AUDIO</h3>
+                    <div class="setting-item">
+                        <label for="soundEnabled">Sonidos del Juego</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="soundEnabled" checked>
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label for="soundVolume">Volumen</label>
+                        <input type="range" id="soundVolume" min="0" max="100" value="50" class="volume-slider">
+                        <span class="volume-value">50%</span>
+                    </div>
+                </div>
+
+                <!-- Ajustes de Velocidad -->
+                <div class="settings-section">
+                    <h3>🚀 VELOCIDAD</h3>
+                    <div class="setting-item">
+                        <label for="playerSpeed">Velocidad del Jugador</label>
+                        <input type="range" id="playerSpeed" min="3" max="12" value="7" class="speed-slider">
+                        <span class="speed-value">7</span>
+                    </div>
+                    <div class="setting-item">
+                        <label for="gameSpeed">Velocidad del Juego</label>
+                        <input type="range" id="gameSpeed" min="0.5" max="2" step="0.1" value="1" class="speed-slider">
+                        <span class="game-speed-value">1x</span>
+                    </div>
+                </div>
+
+                <!-- Ajustes de Controles -->
+                <div class="settings-section">
+                    <h3>🎮 CONTROLES</h3>
+                    <div class="setting-item">
+                        <label for="gesturesSensitivity">Sensibilidad de Gestos</label>
+                        <input type="range" id="gesturesSensitivity" min="0.5" max="2" step="0.1" value="1"
+                            class="sensitivity-slider">
+                        <span class="sensitivity-value">1x</span>
+                    </div>
+                    <div class="setting-item">
+                        <label for="keyboardEnabled">Controles de Teclado</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="keyboardEnabled" checked>
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ajustes Visuales -->
+                <div class="settings-section">
+                    <h3>👁️ VISUALES</h3>
+                    <div class="setting-item">
+                        <label for="particlesEnabled">Efectos de Partículas</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="particlesEnabled" checked>
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label for="screenShakeEnabled">Vibración de Pantalla</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="screenShakeEnabled" checked>
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label for="trailEnabled">Estela del Jugador</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="trailEnabled" checked>
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ajustes de Dificultad -->
+                <div class="settings-section">
+                    <h3>⚡ DIFICULTAD</h3>
+                    <div class="setting-item">
+                        <label for="difficultyLevel">Nivel de Dificultad</label>
+                        <select id="difficultyLevel" class="difficulty-select">
+                            <option value="easy">🟢 Fácil</option>
+                            <option value="normal" selected>🟡 Normal</option>
+                            <option value="hard">🔴 Difícil</option>
+                            <option value="extreme">💀 Extremo</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label for="livesEnabled">Vidas Limitadas</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="livesEnabled">
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ajustes de Rendimiento -->
+                <div class="settings-section">
+                    <h3>⚡ RENDIMIENTO</h3>
+                    <div class="setting-item">
+                        <label for="fpsLimit">Límite de FPS</label>
+                        <select id="fpsLimit" class="fps-select">
+                            <option value="30">30 FPS</option>
+                            <option value="60" selected>60 FPS</option>
+                            <option value="120">120 FPS</option>
+                            <option value="unlimited">Sin Límite</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label for="qualityLevel">Calidad Gráfica</label>
+                        <select id="qualityLevel" class="quality-select">
+                            <option value="low">🔻 Baja</option>
+                            <option value="medium" selected>🔸 Media</option>
+                            <option value="high">🔺 Alta</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-buttons">
+                <button class="settings-button reset-btn" onclick="resetSettings()">🔄 Restablecer</button>
+                <button class="settings-button save-btn" onclick="saveSettings()">💾 Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MediaPipe Hands - Cargado de forma optimizada -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+    <!-- Juego principal optimizado -->
+    <script defer src="gesture-game.js"></script>
+
+    <!-- Loading indicator -->
+    <script>
+        // Mostrar indicador de carga mientras se cargan las librerías
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.id = 'loadingIndicator';
+            loadingIndicator.innerHTML = `
+                <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                           background: rgba(0,0,0,0.9); padding: 20px; border-radius: 10px; 
+                           border: 2px solid #00ff88; z-index: 3000; text-align: center;">
+                    <div style="color: #00ff88; font-size: 18px; margin-bottom: 10px;">🚀 Cargando Sistema Espacial...</div>
+                    <div style="color: #ccc; font-size: 14px;">Inicializando controles de gestos</div>
+                </div>
+            `;
+
+            // Solo mostrar si las librerías no están cargadas
+            if (typeof Hands === 'undefined') {
+                document.body.appendChild(loadingIndicator);
+
+                // Remover cuando todo esté listo
+                const checkLoaded = setInterval(() => {
+                    if (typeof Hands !== 'undefined') {
+                        clearInterval(checkLoaded);
+                        setTimeout(() => {
+                            if (loadingIndicator.parentNode) {
+                                loadingIndicator.parentNode.removeChild(loadingIndicator);
+                            }
+                        }, 1000);
+                    }
+                }, 100);
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1944 @@
+/* Reset y configuración base */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    margin: 0;
+    padding: 10px;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Courier New', monospace;
+    color: #fff;
+    overflow: hidden;
+    user-select: none;
+    position: relative;
+}
+
+/* Fondo estrellado espacial */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+        radial-gradient(2px 2px at 40px 70px, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+        radial-gradient(1px 1px at 130px 80px, rgba(255, 255, 255, 0.6), transparent),
+        radial-gradient(2px 2px at 160px 30px, #fff, transparent),
+        radial-gradient(1px 1px at 200px 90px, rgba(255, 255, 255, 0.7), transparent),
+        radial-gradient(2px 2px at 240px 50px, #eee, transparent),
+        radial-gradient(1px 1px at 280px 10px, #fff, transparent),
+        radial-gradient(1px 1px at 320px 70px, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(2px 2px at 360px 40px, #fff, transparent),
+        radial-gradient(1px 1px at 400px 20px, rgba(255, 255, 255, 0.6), transparent),
+        radial-gradient(1px 1px at 440px 80px, #eee, transparent),
+        radial-gradient(2px 2px at 480px 60px, #fff, transparent),
+        radial-gradient(1px 1px at 520px 30px, rgba(255, 255, 255, 0.7), transparent),
+        radial-gradient(1px 1px at 560px 90px, #fff, transparent),
+        radial-gradient(2px 2px at 600px 10px, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1px 1px at 640px 50px, #eee, transparent),
+        radial-gradient(1px 1px at 680px 70px, #fff, transparent),
+        radial-gradient(2px 2px at 720px 20px, rgba(255, 255, 255, 0.6), transparent),
+        radial-gradient(1px 1px at 760px 80px, #fff, transparent);
+    background-repeat: repeat;
+    background-size: 800px 100px;
+    animation: starfield 200s linear infinite;
+    z-index: -2;
+}
+
+/* Nebulosa de fondo */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(ellipse at 20% 50%, rgba(120, 0, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(255, 0, 120, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 40% 80%, rgba(0, 120, 255, 0.1) 0%, transparent 50%);
+    animation: nebula 60s ease-in-out infinite alternate;
+    z-index: -1;
+}
+
+@keyframes starfield {
+    0% {
+        transform: translateY(0);
+    }
+
+    100% {
+        transform: translateY(-100px);
+    }
+}
+
+@keyframes nebula {
+    0% {
+        opacity: 0.3;
+        transform: scale(1) rotate(0deg);
+    }
+
+    100% {
+        opacity: 0.6;
+        transform: scale(1.1) rotate(2deg);
+    }
+}
+
+/* Contenedor principal del juego */
+#gameContainer {
+    text-align: center;
+    width: 100%;
+    max-width: 1200px;
+    position: relative;
+    z-index: 1;
+    margin-right: 0;
+    transition: margin-right 0.4s ease;
+}
+
+/* Layout horizontal para juego e instrucciones */
+#gameLayout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Área del juego (canvas + UI) */
+#gameArea {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Panel lateral de instrucciones */
+#instructionsPanel {
+    flex: 0 0 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+    min-height: 600px;
+}
+
+/* Cuando el panel está abierto, hacer espacio */
+body.panel-open #gameContainer {
+    margin-right: 320px;
+}
+
+/* Canvas del juego */
+#gameCanvas {
+    border: 2px solid #00ff88;
+    border-radius: 8px;
+    background: rgba(17, 17, 17, 0.9);
+    backdrop-filter: blur(5px);
+    max-width: 100%;
+    height: auto;
+    touch-action: none;
+    box-shadow:
+        0 0 20px rgba(0, 255, 136, 0.3),
+        inset 0 0 20px rgba(0, 255, 136, 0.1);
+}
+
+/* Contenedor de la cámara */
+#cameraContainer {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 200px;
+    height: 150px;
+    border: 2px solid #00ff88;
+    border-radius: 10px;
+    overflow: hidden;
+    z-index: 1000;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+    backdrop-filter: blur(5px);
+}
+
+#videoElement {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+/* Estado de gestos */
+#gestureStatus {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 10px;
+    border-radius: 8px;
+    border: 2px solid #00ff88;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+    z-index: 1000;
+    min-width: 200px;
+}
+
+.gesture-indicator {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.gesture-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.3s ease;
+}
+
+.active {
+    background: #00ff88;
+    color: #000;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
+    animation: pulse 1s infinite;
+}
+
+.inactive {
+    background: #333;
+    color: #666;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Interfaz de usuario */
+#ui {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 800px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+#title {
+    font-size: clamp(18px, 4vw, 24px);
+    margin-bottom: 10px;
+    color: #00ff88;
+    text-shadow:
+        0 0 10px rgba(0, 255, 136, 0.8),
+        0 0 20px rgba(0, 255, 136, 0.4),
+        0 0 30px rgba(0, 255, 136, 0.2);
+    animation: titleGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+    0% {
+        text-shadow: 0 0 10px rgba(0, 255, 136, 0.8), 0 0 20px rgba(0, 255, 136, 0.4);
+    }
+
+    100% {
+        text-shadow: 0 0 15px rgba(0, 255, 136, 1), 0 0 25px rgba(0, 255, 136, 0.6), 0 0 35px rgba(0, 255, 136, 0.3);
+    }
+}
+
+.stat {
+    font-size: clamp(14px, 3vw, 16px);
+    color: #fff;
+    flex: 1;
+    min-width: 80px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    backdrop-filter: blur(5px);
+}
+
+/* Game Over */
+#gameOver {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(15px);
+    padding: 30px;
+    border: 2px solid #ff0000;
+    border-radius: 15px;
+    display: none;
+    z-index: 1000;
+    text-align: center;
+    max-width: 90vw;
+    box-shadow:
+        0 0 30px rgba(255, 0, 0, 0.5),
+        inset 0 0 20px rgba(255, 0, 0, 0.1);
+}
+
+#gameOver h2 {
+    color: #ff0000;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+    margin-bottom: 20px;
+}
+
+/* Instrucciones */
+#instructions {
+    margin-top: 15px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    font-size: 12px;
+    max-width: 100%;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+}
+
+/* Permisos de cámara */
+#cameraPermission {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(15px);
+    padding: 30px;
+    border: 2px solid #00ff88;
+    border-radius: 15px;
+    z-index: 2000;
+    text-align: center;
+    max-width: 90vw;
+    box-shadow:
+        0 0 30px rgba(0, 255, 136, 0.5),
+        inset 0 0 20px rgba(0, 255, 136, 0.1);
+}
+
+#cameraPermission h2 {
+    color: #00ff88;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+    margin-bottom: 20px;
+}
+
+#cameraPermission ul {
+    text-align: left;
+    display: inline-block;
+    margin: 20px 0;
+}
+
+#cameraPermission li {
+    margin: 8px 0;
+    color: #ccc;
+}
+
+.permission-button {
+    background: linear-gradient(45deg, #00ff88, #00cc66);
+    color: #000;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+}
+
+.permission-button:hover {
+    background: linear-gradient(45deg, #00cc66, #00aa55);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+}
+
+.permission-button:active {
+    transform: translateY(0);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    body {
+        padding: 5px;
+    }
+
+    /* Layout vertical en móviles */
+    #gameLayout {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+
+    #instructionsPanel {
+        flex: none;
+        width: 100%;
+        max-width: 400px;
+        min-height: auto;
+    }
+
+    #cameraContainer {
+        width: 150px;
+        height: 112px;
+        top: 5px;
+        right: 5px;
+    }
+
+    #gestureStatus {
+        font-size: 12px;
+        min-width: 150px;
+        top: 5px;
+        left: 5px;
+        padding: 8px;
+    }
+
+    #gameCanvas {
+        border-width: 1px;
+    }
+
+    .stat {
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+
+    #instructions {
+        font-size: 11px;
+        padding: 10px;
+        margin-top: 0;
+    }
+
+    .permission-button {
+        padding: 10px 20px;
+        font-size: 14px;
+        margin: 8px;
+    }
+
+    .menu-toggle {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    #cameraContainer {
+        width: 120px;
+        height: 90px;
+    }
+
+    #gestureStatus {
+        min-width: 120px;
+        font-size: 11px;
+    }
+
+    #title {
+        font-size: 16px;
+    }
+
+    .stat {
+        font-size: 11px;
+        min-width: 60px;
+    }
+}
+
+/* Animaciones adicionales para el tema espacial */
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+#gameContainer {
+    animation: float 6s ease-in-out infinite;
+}
+
+/* Efectos de brillo para elementos interactivos */
+.permission-button,
+#gameCanvas,
+#cameraContainer,
+#gestureStatus {
+    position: relative;
+}
+
+.permission-button::before,
+#gameCanvas::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, transparent, rgba(0, 255, 136, 0.1), transparent);
+    border-radius: inherit;
+    z-index: -1;
+    animation: borderGlow 3s linear infinite;
+}
+
+@keyframes borderGlow {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Panel Lateral de Misiones - Formato Vertical */
+#levelMenu {
+    position: fixed;
+    top: 50%;
+    right: -350px;
+    /* Inicialmente oculto */
+    transform: translateY(-50%);
+    width: 320px;
+    height: 85vh;
+    max-height: 700px;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(20px);
+    z-index: 2500;
+    transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow: hidden;
+    border: 3px solid #00ff88;
+    border-radius: 20px;
+    box-shadow:
+        -10px 0 30px rgba(0, 255, 136, 0.3),
+        0 0 20px rgba(0, 255, 136, 0.2),
+        inset 0 0 20px rgba(0, 255, 136, 0.1);
+}
+
+/* Panel de Ajustes */
+#settingsMenu {
+    position: fixed;
+    top: 50%;
+    right: -400px;
+    /* Inicialmente oculto */
+    transform: translateY(-50%);
+    width: 380px;
+    height: 90vh;
+    max-height: 800px;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(20px);
+    z-index: 2500;
+    transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow: hidden;
+    border: 3px solid #00ff88;
+    border-radius: 20px;
+    box-shadow:
+        -10px 0 30px rgba(0, 255, 136, 0.3),
+        0 0 20px rgba(0, 255, 136, 0.2),
+        inset 0 0 20px rgba(0, 255, 136, 0.1);
+}
+
+#settingsMenu.show {
+    right: 20px;
+}
+
+#levelMenu.show {
+    right: 20px;
+    /* Mostrar panel con margen */
+}
+
+.level-menu-container {
+    padding: 25px 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+    border: none;
+    position: relative;
+}
+
+.level-menu-container h2 {
+    color: #00ff88;
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: 0 0 15px rgba(0, 255, 136, 0.8);
+    font-size: 20px;
+    position: relative;
+}
+
+/* Botón de cerrar panel */
+.close-panel {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 0, 0, 0.2);
+    border: 2px solid #ff4444;
+    color: #ff4444;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.close-panel:hover {
+    background: rgba(255, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.level-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 5px 10px 0;
+    max-height: calc(100% - 120px);
+}
+
+.level-button {
+    width: 100%;
+    height: 75px;
+    border: 2px solid #333;
+    border-radius: 15px;
+    background: rgba(20, 20, 20, 0.9);
+    color: #666;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 6px;
+    backdrop-filter: blur(5px);
+}
+
+.level-button.unlocked {
+    border-color: #00ff88;
+    color: #00ff88;
+    background: rgba(0, 255, 136, 0.1);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+}
+
+.level-button.completed {
+    border-color: #ffff00;
+    color: #ffff00;
+    background: rgba(255, 255, 0, 0.1);
+    box-shadow: 0 0 15px rgba(255, 255, 0, 0.3);
+}
+
+.level-button.locked {
+    border-color: #666;
+    color: #444;
+    background: rgba(10, 10, 10, 0.8);
+    cursor: not-allowed;
+}
+
+.level-button:not(.locked):hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 255, 136, 0.4);
+}
+
+.level-button.completed:hover {
+    box-shadow: 0 10px 25px rgba(255, 255, 0, 0.4);
+}
+
+.level-number {
+    font-size: 18px;
+    margin-bottom: 3px;
+}
+
+.level-stats {
+    font-size: 9px;
+    text-align: center;
+    opacity: 0.8;
+    line-height: 1.2;
+}
+
+.level-icon {
+    font-size: 16px;
+    margin-bottom: 3px;
+}
+
+.menu-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.menu-button {
+    background: linear-gradient(45deg, #00ff88, #00cc66);
+    color: #000;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+}
+
+.menu-button:hover {
+    background: linear-gradient(45deg, #00cc66, #00aa55);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+}
+
+.menu-button:active {
+    transform: translateY(0);
+}
+
+/* Contenedor de controles del juego */
+#gameControls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: auto;
+}
+
+/* Botones de control generales */
+.control-button {
+    background: linear-gradient(45deg, #00ff88, #00aa55);
+    color: #000;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 12px rgba(0, 255, 136, 0.4);
+    text-align: center;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.control-button:hover {
+    background: linear-gradient(45deg, #00ff88, #00aa55);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 16px rgba(0, 255, 136, 0.4);
+}
+
+.control-button:active {
+    transform: translateY(0);
+}
+
+/* Botón de pausa específico - mismo color que los demás */
+#pauseButton.paused {
+    background: linear-gradient(45deg, #4a90e2, #357abd);
+    box-shadow: 0 3px 12px rgba(74, 144, 226, 0.3);
+}
+
+#pauseButton.paused:hover {
+    background: linear-gradient(45deg, #27ae60, #229954);
+    box-shadow: 0 3px 12px rgba(39, 174, 96, 0.3);
+}
+
+/* Botón de gestos específico */
+.gesture-button {
+    background: linear-gradient(45deg, #27ae60, #229954);
+    box-shadow: 0 3px 12px rgba(39, 174, 96, 0.3);
+}
+
+.gesture-button:hover {
+    background: linear-gradient(45deg, #27ae60, #229954);
+    box-shadow: 0 3px 12px rgba(39, 174, 96, 0.3);
+}
+
+.gesture-button.active {
+    background: linear-gradient(45deg, #27ae60, #229954);
+    box-shadow: 0 3px 12px rgba(39, 174, 96, 0.3);
+}
+
+.gesture-button.active:hover {
+    background: linear-gradient(45deg, #229954, #1e8449);
+    box-shadow: 0 5px 16px rgba(39, 174, 96, 0.4);
+}
+
+/* Botón de menú dentro del panel de instrucciones */
+.menu-toggle {
+    background: linear-gradient(45deg, #00ff88, #00cc66);
+    color: #000;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+    text-align: center;
+    width: 100%;
+}
+
+.menu-toggle:hover {
+    background: linear-gradient(45deg, #00cc66, #00aa55);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+}
+
+.menu-toggle:active {
+    transform: translateY(0);
+}
+
+/* Scrollbar personalizado para el panel */
+.level-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.level-grid::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+}
+
+.level-grid::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 136, 0.5);
+    border-radius: 3px;
+}
+
+.level-grid::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 136, 0.7);
+}
+
+/* Efecto de entrada para los botones de nivel */
+.level-button {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive para el menú */
+@media (max-width: 768px) {
+    #levelMenu {
+        width: 320px;
+        right: -320px;
+    }
+
+    .level-menu-container {
+        padding: 15px;
+    }
+
+    .level-menu-container h2 {
+        font-size: 18px;
+        margin-bottom: 15px;
+    }
+
+    .level-grid {
+        gap: 8px;
+    }
+
+    .level-button {
+        height: 70px;
+        font-size: 12px;
+    }
+
+    .level-number {
+        font-size: 16px;
+    }
+
+    .level-icon {
+        font-size: 14px;
+    }
+
+    .menu-button {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+
+    .close-panel {
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+        top: 10px;
+        right: 10px;
+    }
+
+    /* Ajustar botón de menú en móviles cuando el panel está abierto */
+    body.panel-open .menu-toggle {
+        right: 340px;
+        /* 320px del panel + 20px de margen */
+    }
+}
+
+@media (max-width: 480px) {
+    #levelMenu {
+        width: 280px;
+        right: -280px;
+    }
+
+    .level-button {
+        height: 60px;
+        font-size: 11px;
+    }
+
+    .level-number {
+        font-size: 14px;
+    }
+
+    .level-stats {
+        font-size: 8px;
+    }
+}
+
+/* Contenedor del menú de ajustes */
+.settings-menu-container {
+    padding: 25px 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+    border: none;
+    position: relative;
+}
+
+.settings-menu-container h2 {
+    color: #00ff88;
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: 0 0 15px rgba(0, 255, 136, 0.8);
+    font-size: 20px;
+    position: relative;
+}
+
+/* Contenido de ajustes con scroll */
+.settings-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 5px 10px 0;
+    max-height: calc(100% - 120px);
+}
+
+/* Secciones de ajustes */
+.settings-section {
+    margin-bottom: 25px;
+    background: rgba(0, 255, 136, 0.05);
+    border: 1px solid rgba(0, 255, 136, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    backdrop-filter: blur(5px);
+}
+
+.settings-section h3 {
+    color: #00ff88;
+    font-size: 16px;
+    margin: 0 0 15px 0;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
+    border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+    padding-bottom: 8px;
+}
+
+/* Items individuales de ajustes */
+.setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding: 8px 0;
+}
+
+.setting-item:last-child {
+    margin-bottom: 0;
+}
+
+.setting-item label {
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    flex: 1;
+    margin-right: 15px;
+}
+
+/* Toggle switches */
+.toggle-switch {
+    position: relative;
+    width: 50px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #333;
+    transition: 0.3s;
+    border-radius: 24px;
+    border: 2px solid #555;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: #666;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: #00ff88;
+    border-color: #00ff88;
+}
+
+input:checked+.slider:before {
+    transform: translateX(24px);
+    background-color: #fff;
+}
+
+/* Sliders de rango */
+.volume-slider,
+.speed-slider,
+.sensitivity-slider {
+    flex: 1;
+    margin: 0 10px;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: #333;
+    outline: none;
+    border: 1px solid #555;
+}
+
+.volume-slider::-webkit-slider-thumb,
+.speed-slider::-webkit-slider-thumb,
+.sensitivity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #00ff88;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+}
+
+.volume-slider::-moz-range-thumb,
+.speed-slider::-moz-range-thumb,
+.sensitivity-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #00ff88;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+}
+
+/* Valores de los sliders */
+.volume-value,
+.speed-value,
+.sensitivity-value,
+.game-speed-value {
+    color: #00ff88;
+    font-weight: bold;
+    font-size: 12px;
+    min-width: 35px;
+    text-align: center;
+}
+
+/* Selectores */
+.difficulty-select,
+.fps-select,
+.quality-select {
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    border: 2px solid #00ff88;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    outline: none;
+    min-width: 120px;
+}
+
+.difficulty-select:focus,
+.fps-select:focus,
+.quality-select:focus {
+    border-color: #44ffaa;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+}
+
+.difficulty-select option,
+.fps-select option,
+.quality-select option {
+    background: #000;
+    color: #fff;
+    padding: 5px;
+}
+
+/* Botones de ajustes */
+.settings-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.settings-button {
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.reset-btn {
+    background: linear-gradient(45deg, #ff4444, #cc3333);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3);
+}
+
+.reset-btn:hover {
+    background: linear-gradient(45deg, #ff6666, #dd4444);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 68, 68, 0.4);
+}
+
+.save-btn {
+    background: linear-gradient(45deg, #ff8800, #cc6600);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(255, 136, 0, 0.3);
+}
+
+.save-btn:hover {
+    background: linear-gradient(45deg, #ffaa22, #dd7700);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 136, 0, 0.4);
+}
+
+.settings-button:active {
+    transform: translateY(0);
+}
+
+/* Scrollbar personalizado para ajustes */
+.settings-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.settings-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+}
+
+.settings-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 136, 0, 0.5);
+    border-radius: 3px;
+}
+
+.settings-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 136, 0, 0.7);
+}
+
+/* Animaciones para el menú de ajustes */
+.settings-section {
+    animation: slideInLeft 0.3s ease-out;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive para ajustes */
+@media (max-width: 768px) {
+    #settingsMenu {
+        width: 350px;
+        right: -350px;
+    }
+
+    .settings-menu-container {
+        padding: 15px;
+    }
+
+    .settings-menu-container h2 {
+        font-size: 18px;
+        margin-bottom: 15px;
+    }
+
+    .settings-section {
+        margin-bottom: 20px;
+        padding: 12px;
+    }
+
+    .settings-section h3 {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    .setting-item {
+        margin-bottom: 12px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .setting-item label {
+        margin-right: 0;
+        margin-bottom: 5px;
+    }
+
+    .toggle-switch {
+        align-self: flex-end;
+    }
+
+    .volume-slider,
+    .speed-slider,
+    .sensitivity-slider {
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    .difficulty-select,
+    .fps-select,
+    .quality-select {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .settings-button {
+        padding: 10px 20px;
+        font-size: 14px;
+        min-width: 100px;
+    }
+}
+
+@media (max-width: 480px) {
+    #settingsMenu {
+        width: 320px;
+        right: -320px;
+    }
+
+    .settings-section {
+        padding: 10px;
+    }
+
+    .settings-section h3 {
+        font-size: 13px;
+    }
+
+    .setting-item label {
+        font-size: 13px;
+    }
+
+    .settings-button {
+        padding: 8px 16px;
+        font-size: 12px;
+        min-width: 80px;
+    }
+}/* 
+============================================================================
+   CONTROLES MÓVILES
+   ============================================================================ */
+
+/* Controles móviles - Solo visibles en dispositivos táctiles */
+.mobile-controls {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    z-index: 1500;
+    pointer-events: none;
+}
+
+/* Joystick virtual */
+.virtual-joystick {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    pointer-events: all;
+}
+
+.joystick-base {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: rgba(0, 255, 136, 0.2);
+    border: 3px solid rgba(0, 255, 136, 0.6);
+    position: relative;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+}
+
+.joystick-knob {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #00ff88, #00cc66);
+    border: 2px solid #fff;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.1s ease;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+}
+
+.joystick-label {
+    text-align: center;
+    color: #00ff88;
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 10px;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+    font-family: 'Courier New', monospace;
+}
+
+/* Botones móviles */
+.mobile-buttons {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    pointer-events: all;
+}
+
+.mobile-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid #00ff88;
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-btn:active {
+    transform: scale(0.9);
+    background: rgba(0, 255, 136, 0.4);
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.6);
+}
+
+.pause-btn {
+    background: rgba(0, 255, 136, 0.3);
+}
+
+.restart-btn {
+    background: rgba(255, 136, 0, 0.3);
+    border-color: #ff8800;
+    color: #ff8800;
+    box-shadow: 0 0 20px rgba(255, 136, 0, 0.3);
+}
+
+.restart-btn:active {
+    background: rgba(255, 136, 0, 0.5);
+    box-shadow: 0 0 30px rgba(255, 136, 0, 0.6);
+}
+
+/* Instrucciones móviles */
+.mobile-instructions {
+    display: none;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    z-index: 1400;
+    pointer-events: none;
+}
+
+.mobile-tip {
+    background: rgba(0, 0, 0, 0.9);
+    border: 2px solid #00ff88;
+    border-radius: 10px;
+    padding: 15px;
+    color: #fff;
+    font-size: 12px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    font-family: 'Courier New', monospace;
+    animation: fadeInOut 8s ease-in-out;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0; transform: translateY(-20px); }
+    10%, 90% { opacity: 1; transform: translateY(0); }
+}
+
+/* Detección de dispositivos táctiles */
+@media (hover: none) and (pointer: coarse) {
+    .mobile-controls {
+        display: block;
+    }
+    
+    .mobile-instructions {
+        display: block;
+    }
+    
+    /* Ocultar algunos elementos en móviles */
+    #cameraContainer {
+        width: 120px;
+        height: 90px;
+        top: 10px;
+        right: 10px;
+    }
+    
+    #gestureStatus {
+        font-size: 10px;
+        min-width: 100px;
+        top: 10px;
+        left: 10px;
+        padding: 5px;
+    }
+    
+    /* Ajustar UI para móviles */
+    #ui {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .stat {
+        font-size: 11px;
+        padding: 4px 8px;
+        min-width: 60px;
+    }
+    
+    /* Ajustar canvas para móviles */
+    #gameCanvas {
+        max-width: 100vw;
+        max-height: 60vh;
+        width: auto;
+        height: auto;
+    }
+    
+    /* Ajustar título para móviles */
+    #title {
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+    
+    /* Ajustar layout para móviles */
+    #gameLayout {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    #instructionsPanel {
+        width: 100%;
+        max-width: 400px;
+        min-height: auto;
+        order: 2;
+    }
+    
+    #gameArea {
+        order: 1;
+    }
+    
+    /* Ajustar instrucciones para móviles */
+    #instructions {
+        font-size: 10px;
+        padding: 8px;
+        margin-top: 0;
+    }
+    
+    /* Ajustar botones para móviles */
+    .control-button, .menu-toggle {
+        padding: 8px 12px;
+        font-size: 11px;
+    }
+    
+    /* Ajustar menús para móviles */
+    #levelMenu, #settingsMenu {
+        width: 95vw;
+        height: 90vh;
+        right: -95vw;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+    #levelMenu.show, #settingsMenu.show {
+        right: auto;
+        left: 50%;
+    }
+}
+
+/* Orientación horizontal en móviles */
+@media (hover: none) and (pointer: coarse) and (orientation: landscape) {
+    .virtual-joystick {
+        bottom: 10px;
+        left: 10px;
+    }
+    
+    .joystick-base {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .joystick-knob {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .mobile-buttons {
+        bottom: 10px;
+        right: 10px;
+    }
+    
+    .mobile-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+    
+    #gameCanvas {
+        max-height: 80vh;
+    }
+    
+    .mobile-tip {
+        font-size: 10px;
+        padding: 10px;
+    }
+}
+
+/* Pantallas muy pequeñas */
+@media (hover: none) and (pointer: coarse) and (max-width: 360px) {
+    .virtual-joystick {
+        bottom: 15px;
+        left: 15px;
+    }
+    
+    .joystick-base {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .joystick-knob {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .mobile-buttons {
+        bottom: 15px;
+        right: 15px;
+    }
+    
+    .mobile-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 18px;
+    }
+    
+    .mobile-tip {
+        font-size: 10px;
+        padding: 8px;
+    }
+    
+    #gameCanvas {
+        max-width: 95vw;
+    }
+}
+
+/* Estados especiales para móviles */
+@media (hover: none) and (pointer: coarse) {
+    /* Game Over en móviles */
+    #gameOver {
+        width: 90vw;
+        max-width: 400px;
+        padding: 20px;
+    }
+    
+    #gameOver h2 {
+        font-size: 20px;
+    }
+    
+    #gameOver p {
+        font-size: 14px;
+    }
+    
+    /* Permisos de cámara en móviles */
+    #cameraPermission {
+        width: 95vw;
+        max-width: 500px;
+        padding: 20px;
+    }
+    
+    #cameraPermission h2 {
+        font-size: 18px;
+    }
+    
+    #cameraPermission li {
+        font-size: 12px;
+        margin: 5px 0;
+    }
+    
+    .permission-button {
+        padding: 10px 16px;
+        font-size: 13px;
+        margin: 8px 5px;
+    }
+}
+
+/* Animaciones específicas para móviles */
+@media (hover: none) and (pointer: coarse) {
+    .joystick-knob.active {
+        animation: joystickPulse 0.5s ease-in-out;
+    }
+    
+    @keyframes joystickPulse {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); }
+        50% { transform: translate(-50%, -50%) scale(1.1); }
+    }
+    
+    .mobile-btn.pressed {
+        animation: buttonPress 0.2s ease-in-out;
+    }
+    
+    @keyframes buttonPress {
+        0% { transform: scale(1); }
+        50% { transform: scale(0.9); }
+        100% { transform: scale(1); }
+    }
+}
+/*
+ 
+============================================================================
+   OPTIMIZACIONES MÓVILES ADICIONALES
+   ============================================================================ */
+
+/* Controles virtuales adicionales creados por JavaScript */
+#virtualControls {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    display: none !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    z-index: 1000 !important;
+}
+
+#virtualControls button {
+    width: 60px !important;
+    height: 60px !important;
+    border: none !important;
+    border-radius: 50% !important;
+    background: rgba(0, 0, 0, 0.7) !important;
+    color: white !important;
+    font-size: 24px !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    border: 2px solid #00ff88 !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.3) !important;
+    transition: all 0.3s ease !important;
+    user-select: none !important;
+}
+
+#virtualControls button:hover,
+#virtualControls button:active {
+    background: rgba(0, 255, 136, 0.3) !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.5) !important;
+}
+
+/* Instrucciones móviles mejoradas */
+.mobile-instructions {
+    display: none;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1400;
+    max-width: 90vw;
+}
+
+.mobile-tip {
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(15px);
+    padding: 15px 20px;
+    border-radius: 12px;
+    border: 2px solid #00ff88;
+    color: #fff;
+    font-size: 12px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    animation: fadeInDown 0.5s ease-out;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mostrar controles móviles solo en dispositivos táctiles */
+@media (hover: none) and (pointer: coarse) {
+    .mobile-controls {
+        display: block;
+    }
+    
+    .mobile-instructions {
+        display: block;
+    }
+    
+    #virtualControls {
+        display: flex !important;
+    }
+}
+
+/* Optimizaciones específicas para móviles */
+@media (max-width: 768px) {
+    /* Canvas más pequeño en móviles */
+    #gameCanvas {
+        max-width: 95vw;
+        max-height: 60vh;
+    }
+    
+    /* Ajustar controles móviles */
+    .virtual-joystick {
+        bottom: 15px;
+        left: 15px;
+    }
+    
+    .joystick-base {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .joystick-knob {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .mobile-buttons {
+        bottom: 15px;
+        right: 15px;
+        gap: 10px;
+    }
+    
+    .mobile-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+    
+    #virtualControls {
+        bottom: 15px !important;
+        right: 15px !important;
+        gap: 8px !important;
+    }
+    
+    #virtualControls button {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 20px !important;
+    }
+    
+    /* Ocultar elementos innecesarios en móviles */
+    #cameraContainer {
+        display: none;
+    }
+    
+    #gestureStatus {
+        display: none;
+    }
+    
+    /* Optimizar rendimiento */
+    body::before {
+        animation-duration: 300s;
+    }
+    
+    body::after {
+        animation-duration: 120s;
+    }
+    
+    #gameCanvas {
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+    }
+    
+    .permission-button::before,
+    #gameCanvas::before {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Pantallas muy pequeñas */
+    .virtual-joystick {
+        bottom: 10px;
+        left: 10px;
+    }
+    
+    .joystick-base {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .joystick-knob {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .mobile-buttons {
+        bottom: 10px;
+        right: 10px;
+    }
+    
+    .mobile-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+    }
+    
+    #virtualControls {
+        bottom: 10px !important;
+        right: 10px !important;
+    }
+    
+    #virtualControls button {
+        width: 45px !important;
+        height: 45px !important;
+        font-size: 18px !important;
+    }
+    
+    .mobile-tip {
+        font-size: 11px;
+        padding: 12px 16px;
+    }
+}
+
+/* Orientación landscape en móviles */
+@media (max-width: 768px) and (orientation: landscape) {
+    .mobile-instructions {
+        top: 10px;
+    }
+    
+    .mobile-tip {
+        padding: 8px 12px;
+        font-size: 10px;
+    }
+    
+    .virtual-joystick {
+        bottom: 10px;
+        left: 10px;
+    }
+    
+    .mobile-buttons {
+        bottom: 10px;
+        right: 10px;
+    }
+    
+    #virtualControls {
+        bottom: 10px !important;
+        right: 10px !important;
+    }
+}
+
+/* Prevenir zoom en dispositivos móviles */
+@media (max-width: 768px) {
+    * {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    input, button, select, textarea {
+        -webkit-user-select: auto;
+        -moz-user-select: auto;
+        -ms-user-select: auto;
+        user-select: auto;
+    }
+}
+
+/* Mejoras de accesibilidad táctil */
+@media (hover: none) and (pointer: coarse) {
+    button, .control-button, .menu-toggle, .permission-button {
+        min-height: 44px;
+        min-width: 44px;
+        touch-action: manipulation;
+    }
+    
+    .level-button {
+        min-height: 60px;
+        touch-action: manipulation;
+    }
+    
+    .mobile-btn, #virtualControls button {
+        min-height: 44px !important;
+        min-width: 44px !important;
+    }
+}
